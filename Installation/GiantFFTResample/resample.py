@@ -1,6 +1,5 @@
 import numpy as np
 from dataclasses import dataclass
-import numpy.typing as npt
 
 
 def get_taper(length_sp):
@@ -75,7 +74,7 @@ def get_P_and_Q(in_sr, out_sr):
 class Resampler:
     in_samplerate: int
     out_samplerate: int
-    taper_ratio: int = 0.05
+    lowpass_ratio: int = 0.05
 
     def __post_init__(self):
         accepted_samplerates = [16000, 22050, 32000, 44100, 48000, 96000, 192000]
@@ -83,16 +82,18 @@ class Resampler:
             self.in_samplerate not in accepted_samplerates
             or self.out_samplerate not in accepted_samplerates
         ):
-            raise NotImplementedError(f"Samplerates are {self.in_samplerate} and {self.out_samplerate}. Please select a valid samplerate")
+            raise NotImplementedError(
+                f"Samplerates are {self.in_samplerate} and {self.out_samplerate}. Please select a valid samplerate"
+            )
         if self.in_samplerate == self.out_samplerate:
             raise ValueError("Input samplerate is equal to output samplerate")
         else:
             self.P, self.Q = get_P_and_Q(self.in_samplerate, self.out_samplerate)
 
-    def resample(self, x:np.ndarray):
+    def resample(self, x: np.ndarray):
         numChannels, Nin = x.shape
 
-        M = int(2 * np.ceil((Nin+self.in_samplerate*.5) / (self.Q * 2)))
+        M = int(2 * np.ceil((Nin + self.in_samplerate * 0.5) / (self.Q * 2)))
 
         Nx = M * self.Q
         Ny = M * self.P
@@ -103,7 +104,7 @@ class Resampler:
         x_fft = np.fft.rfft(x, axis=1, n=Nx)
         ## TAPERING
         if self.out_samplerate > self.in_samplerate:
-            Ntaper = int(self.taper_ratio * nbins_in)
+            Ntaper = int(self.lowpass_ratio * nbins_in)
             taper = get_taper(Ntaper).reshape(1, Ntaper)
             x_fft[:, -Ntaper:] *= taper
             ## Zero-padding
@@ -114,7 +115,7 @@ class Resampler:
             y_fft[:, :nbins_out] = x_fft[:, :nbins_out]
             y_fft[:, -1] = np.real(y_fft[:, -1])
 
-            Ntaper = int(self.taper_ratio * nbins_out)
+            Ntaper = int(self.lowpass_ratio * nbins_out)
             taper = get_taper(Ntaper).reshape(1, Ntaper)
             y_fft[:, -Ntaper:] *= taper
 
@@ -133,53 +134,19 @@ class Resampler:
         return self.resample(x)
 
 
-if __name__ == "__main__":
+def resample(
+    x: np.ndarray, in_samplerate: int, out_samplerate: int, lowpass_ratio: float = 0.05
+):
+    """
+    Function to resample
 
-    def dB20(x, eps:float=1e-10):
-        return 20 * np.log(np.maximum(np.abs(x), eps))
-    
-    def dB10(x, eps:float=1e-10):
-        return 10 * np.log(np.maximum(np.abs(x), eps))
-
-    @dataclass
-    class AudioSignal:
-        signal:npt.ArrayLike
-        samplerate:int
-
-        def get_time(self):
-            return np.arange(self.signal.shape[1])/self.samplerate
-        
-        def get_rfft(self, n=None):
-            out = np.fft.rfft(self.signal, n=n)
-            return out
-        
-        def get_rfftfreq(self, n=None):
-            if n is None:
-                n=self.signal.shape[1]
-            out = np.fft.rfftfreq(n=n, d=1/self.samplerate)
-            return out
-        
-    time_s=1
-    x_sr = 44100
-    y_sr = 96000
-    N = int(x_sr * time_s) + 1
-
-    x = np.zeros((1, N))
-    x[:, N // 2 + 1] = 1
-
-    x = AudioSignal(signal=x, samplerate=x_sr)
-
-    RS = Resampler(in_samplerate=x_sr, out_samplerate=y_sr, taper_ratio=0.1)
-
-    y = AudioSignal(signal=RS(x.signal), samplerate=y_sr)
-
-    import matplotlib.pyplot as plt
-
-    
-    plt.plot(x.get_time(), dB10(x.signal[0]))
-    plt.plot(y.get_time(), dB10(y.signal[0]))
-    plt.xlim(time_s/2-.005, time_s/2+.005)
-    plt.ylim(-100, 0)
-    plt.xlabel("Time (ms)")
-    plt.ylabel("Magnitude (dB)")
-    plt.show()
+    args:
+    -----
+     - `x` np.ndarray, shape (Nchannels, Nsamples): signal to resample
+     - `in_samplerate` input samplerate
+     - `out_samplerate` output samplerate
+     - `lowpass_ratio` ratio of frequencies lowpassed. The lower the value, the higher the lowpass frequency
+    """
+    RS = Resampler(in_samplerate, out_samplerate, lowpass_ratio)
+    y = RS(x)
+    return y
