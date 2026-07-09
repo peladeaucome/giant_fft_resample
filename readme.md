@@ -1,4 +1,4 @@
-# PyEvalAudio
+# Giant FFT Resampling
 
 This repository is a Python (Numpy) implementation of the paper "Giant FFTs for sample-rate conversion" by Vesa Välimäki and Stefan Bilbao.
 
