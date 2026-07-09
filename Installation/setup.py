@@ -39,5 +39,6 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=[
         "numpy>=1.26.1",
+        "torch>=2.0.0",
     ],
 )
