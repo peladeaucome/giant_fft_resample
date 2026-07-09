@@ -14,15 +14,27 @@ pip install git+https://github.com/peladeaucome/giant_fft_resample.git#subdirect
 Import `GiantFFTResample`.
 The sample rate converter can be found both in object and function forms.
 
-The arguments are input signal (array of size (channels, Nsamples)), input samplerate, output samplerate and lowpass ratio (the amount of frequency information lost due to the lowpass filter).
+The arguments are input signal (array/tensor of arbitrary shape `(..., Nsamples)`), input samplerate, output samplerate and lowpass ratio (the amount of frequency information lost due to the lowpass filter). Resampling is applied along the last axis.
 
-
+To use the numpy version:
 ```Python
 from GiantFFTResample import Resampler, resample
 
 # Object form:
 rs = Resampler(in_samplerate=in_sr, out_samplerate=out_sr, lowpass_ratio=0.05)
 y = rs(x)
+
+# Functional form:
+y = resample(x, in_samplerate=in_sr, out_samplerate=out_sr, lowpass_ratio=0.05)
+```
+
+To use the PyTorch version:
+```Python
+from GiantFFTResample.torch import TorchResampler, resample
+
+# Object form:
+rs = TorchResampler(in_samplerate=in_sr, out_samplerate=out_sr, lowpass_ratio=0.05)
+y = rs(x)  # x is a torch.Tensor; output is on the same device as x
 
 # Functional form:
 y = resample(x, in_samplerate=in_sr, out_samplerate=out_sr, lowpass_ratio=0.05)
