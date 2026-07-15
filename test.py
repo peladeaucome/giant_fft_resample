@@ -77,22 +77,24 @@ fig, axes = plt.subplots(
 _, _, _, img = axes[0, 0].specgram(
     x=x.signal,
     Fs=x.samplerate,
-    vmin=-260,
+    vmin=-200,
     vmax=-20,
     NFFT=n_fft,
     scale="dB",
     rasterized=True,
+    cmap="copper"
 )
 plt.colorbar(img, cax=axes[0, 1], label="Power (dB)")
 
 _, _, _, img = axes[1, 0].specgram(
     x=y.signal,
     Fs=y.samplerate,
-    vmin=-260,
+    vmin=-200,
     vmax=-20,
     NFFT=n_fft,
     scale="dB",
     rasterized=True,
+    cmap="copper"
 )
 axes[0, 0].set_ylabel("Frequency (Hz)")
 axes[1, 0].set_xlabel("Time (s)")
